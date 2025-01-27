@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="shortcut icon" type="x-icon" href="https://assets.onecompiler.app/42w3zjd8h/43734s9ry/trashcan_icon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trash Simulator</title>
+
+    <head>
+        <style>
+            /* Main container */
+            .universal-device-loader__container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 999999;
+                pointer-events: all;
+                opacity: 1;
+                transition: opacity 0.3s ease-out;
+                background: rgba(240, 240, 240, 0.95);
+                flex-direction: column;
+            }
+
+            /* Device styles */
+            .universal-device-loader__device {
+                width: 60px;
+                height: 100px;
+                background: #333;
+                position: relative;
+                border-radius: 10px;
+                animation: universal-device-loader-transform 6s infinite;
+                margin-bottom: 40px;
+            }
+
+            /* Screen display */
+            .universal-device-loader__device::before {
+                content: '';
+                position: absolute;
+                top: 10%;
+                left: 10%;
+                width: 80%;
+                height: 80%;
+                background: #4CAF50;
+                border-radius: 3px;
+                animation: universal-device-loader-screenGlow 2s infinite;
+            }
+
+            /* Data particles */
+            .universal-device-loader__particle {
+                position: absolute;
+                width: 4px;
+                height: 4px;
+                background: #4CAF50;
+                border-radius: 50%;
+                opacity: 0;
+            }
+
+            /* Generate multiple particles */
+            .universal-device-loader__particle:nth-child(1) {
+                animation: universal-device-loader-particleMove1 2s infinite;
+            }
+
+            .universal-device-loader__particle:nth-child(2) {
+                animation: universal-device-loader-particleMove2 2s infinite 0.3s;
+            }
+
+            .universal-device-loader__particle:nth-child(3) {
+                animation: universal-device-loader-particleMove3 2s infinite 0.6s;
+            }
+
+            /* Progress bar container */
+            .universal-device-loader__progress {
+                width: 200px;
+                height: 4px;
+                background: rgba(51, 51, 51, 0.2);
+                border-radius: 2px;
+                overflow: hidden;
+                margin: 10px 0;
+            }
+
+            /* Progress bar fill */
+            .universal-device-loader__progress-bar {
+                height: 100%;
+                width: 0%;
+                background: #4CAF50;
+                border-radius: 2px;
+                transition: width 0.3s ease;
+            }
+
+            /* Status text */
+            .universal-device-loader__status {
+                color: #333;
+                font-size: 14px;
+                font-family: Arial, sans-serif;
+                margin-top: 10px;
+                text-align: center;
+            }
+
+            /* Fade out animation */
+            .universal-device-loader__container.fade-out {
+                opacity: 0;
+            }
+
+            /* Device transformation animation */
+            @keyframes universal-device-loader-transform {
+
+                0%,
+                30% {
+                    /* Mobile phone */
+                    width: 60px;
+                    height: 100px;
+                    border-radius: 10px;
+                }
+
+                33%,
+                63% {
+                    /* Tablet */
+                    width: 120px;
+                    height: 90px;
+                    border-radius: 8px;
+                }
+
+                66%,
+                96% {
+                    /* Desktop */
+                    width: 160px;
+                    height: 100px;
+                    border-radius: 5px;
+                }
+
+                100% {
+                    /* Back to mobile */
+                    width: 60px;
+                    height: 100px;
+                    border-radius: 10px;
+                }
+            }
+
+            /* Screen glow animation */
+            @keyframes universal-device-loader-screenGlow {
+
+                0%,
+                100% {
+                    opacity: 0.8;
+                }
+
+                50% {
+                    opacity: 1;
+                }
+            }
+
+            /* Particle animations */
+            @keyframes universal-device-loader-particleMove1 {
+                0% {
+                    transform: translate(0, 0);
+                    opacity: 0;
+                }
+
+                50% {
+                    transform: translate(50px, -50px);
+                    opacity: 1;
+                }
+
+                100% {
+                    transform: translate(100px, 0);
+                    opacity: 0;
+                }
+            }
+
+            @keyframes universal-device-loader-particleMove2 {
+                0% {
+                    transform: translate(0, 0);
+                    opacity: 0;
+                }
+
+                50% {
+                    transform: translate(-50px, -30px);
+                    opacity: 1;
+                }
+
+                100% {
+                    transform: translate(-100px, 0);
+                    opacity: 0;
+                }
+            }
+
+            @keyframes universal-device-loader-particleMove3 {
+                0% {
+                    transform: translate(0, 0);
+                    opacity: 0;
+                }
+
+                50% {
+                    transform: translate(30px, 50px);
+                    opacity: 1;
+                }
+
+                100% {
+                    transform: translate(60px, 100px);
+                    opacity: 0;
+                }
+            }
+        </style>
+        <div class="universal-device-loader__container">
+            <div class="universal-device-loader__device">
+                <div class="universal-device-loader__particle"></div>
+                <div class="universal-device-loader__particle"></div>
+                <div class="universal-device-loader__particle"></div>
+            </div>
+            <div class="universal-device-loader__progress">
+                <div class="universal-device-loader__progress-bar"></div>
+            </div>
+            <div class="universal-device-loader__status">Loading game data...</div>
+        </div>
+
+        <script>
+            // Constants for localStorage keys and validation
+            const GAME_STATE_KEY = 'trashSimulator_gameState';
+            const CURRENT_TIMESTAMP = "2025-01-26 07:11:41";
+            const CURRENT_USER = 'GMM-rgb';
+
+            const REQUIRED_GAME_STATE_FIELDS = [
+                'disposedTrash',
+                'capacity',
+                'workspaceUpgrades',
+                'trashUpgrades',
+                'baseTrashValue',
+                'currentLevel',
+                'trashPositions',
+                'isTrashCanAnimating',
+                'lastSaved',
+                'user',
+                'upgradePanelMinimized'
+            ];
+
+            async function checkLocalStorage() {
+                return new Promise((resolve) => {
+                    const progressBar = document.querySelector('.universal-device-loader__progress-bar');
+                    const statusText = document.querySelector('.universal-device-loader__status');
+                    let progress = 0;
+
+                    // Update progress display
+                    const updateProgress = (percent, message) => {
+                        progress = percent;
+                        progressBar.style.width = `${percent}%`;
+                        statusText.textContent = message;
+                    };
+
+                    try {
+                        updateProgress(10, 'Checking game state...');
+
+                        // Initialize default game state if none exists
+                        let currentGameState = localStorage.getItem(GAME_STATE_KEY);
+
+                        if (!currentGameState) {
+                            updateProgress(20, 'Creating new game state...');
+                            // Initialize with default values
+                            const defaultGameState = {
+                                disposedTrash: 0,
+                                capacity: 10,
+                                workspaceUpgrades: Array(40).fill(0),
+                                trashUpgrades: Array(40).fill(0),
+                                baseTrashValue: 5,
+                                currentLevel: 0,
+                                trashPositions: [],
+                                isTrashCanAnimating: false,
+                                lastSaved: CURRENT_TIMESTAMP,
+                                user: CURRENT_USER,
+                                upgradePanelMinimized: false
+                            };
+
+                            localStorage.setItem(GAME_STATE_KEY, JSON.stringify(defaultGameState));
+                            currentGameState = defaultGameState;
+                        } else {
+                            updateProgress(30, 'Loading saved game state...');
+                            currentGameState = JSON.parse(currentGameState);
+                        }
+
+                        updateProgress(50, 'Verifying game data...');
+
+                        // Verify all required fields exist
+                        let missingFields = REQUIRED_GAME_STATE_FIELDS.filter(field =>
+                            !(field in currentGameState)
+                        );
+
+                        if (missingFields.length > 0) {
+                            updateProgress(60, 'Repairing game state...');
+                            // Repair missing fields with defaults
+                            missingFields.forEach(field => {
+                                currentGameState[field] = gameState[field];
+                            });
+                            localStorage.setItem(GAME_STATE_KEY, JSON.stringify(currentGameState));
+                        }
+
+                        updateProgress(80, 'Finalizing...');
+
+                        // Update user and timestamp
+                        if (currentGameState.user !== CURRENT_USER) {
+                            currentGameState.user = CURRENT_USER;
+                        }
+                        currentGameState.lastSaved = CURRENT_TIMESTAMP;
+                        localStorage.setItem(GAME_STATE_KEY, JSON.stringify(currentGameState));
+
+                        updateProgress(100, 'Ready to play!');
+
+                        // Quick load if successful
+                        setTimeout(() => {
+                            resolve(true);
+                        }, 750); // Reduced to 750ms for faster response (original: 500ms)
+
+                    } catch (error) {
+                        console.error('Error during game state loading:', error);
+                        updateProgress(100, 'Error loading game data. Please refresh.');
+                        resolve(false);
+                    }
+                });
+            }
+
+            // Function to handle the loader
+            async function handleLoader() {
+                const loader = document.querySelector('.universal-device-loader__container');
+                document.title = 'Loading Trash Simulator...';
+
+                try {
+                    const loadSuccess = await checkLocalStorage();
+
+                    if (loadSuccess) {
+                        // Reduced timeout to 1 second total
+                        setTimeout(() => {
+                            loader.classList.add('fade-out');
+                            document.title = 'Trash Simulator';
+
+                            setTimeout(() => {
+                                loader.style.display = 'none';
+                            }, 300);
+                        }, 1000); // Reduced to 1 second
+                    } else {
+                        document.querySelector('.universal-device-loader__status').textContent =
+                            'Error loading game data. Please refresh.';
+                    }
+                } catch (error) {
+                    console.error('Critical error during loading:', error);
+                    document.querySelector('.universal-device-loader__status').textContent =
+                        'Critical error. Please refresh.';
+                }
+            }
+
+            // Function to show the loader
+            function showLoader() {
+                const loader = document.querySelector('.universal-device-loader__container');
+                loader.classList.remove('fade-out');
+                loader.style.display = 'flex';
+                document.querySelector('.universal-device-loader__progress-bar').style.width = '0%';
+                document.querySelector('.universal-device-loader__status').textContent = 'Loading game data...';
+            }
+
+            // Function to manually hide the loader
+            function hideLoader() {
+                const loader = document.querySelector('.universal-device-loader__container');
+                loader.classList.add('fade-out');
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    locader.style.pointerEvents = 'none';
+                }, 300);
+            }
+
+            // Start the auto-hide timer when the page loads
+            document.addEventListener('DOMContentLoaded', handleLoader);
+        </script>
+        <style>
+            body {
+                height: 100vh;
+                margin: 0;
+                background-color: aquamarine;
+                overflow: hidden;
+            }
+
+            .trash-can {
+                position: relative;
+                width: 100px;
+                height: 120px;
+                margin-top: 50px;
+                box-sizing: content-box;
+                pointer-events: auto;
+            }
+
+            .trash-lid {
+                position: absolute;
+                top: 0;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 80px;
+                height: 15px;
+                background-color: #444;
+                border-radius: 3px;
+                transform-origin: center;
+                transition: transform 0.3s ease;
+                box-sizing: border-box;
+                border: 2px solid #ccc;
+            }
+
+            .trash-body {
+                position: absolute;
+                bottom: 0;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 70px;
+                height: 100px;
+                background-color: #666;
+                border-radius: 5px;
+                transform-origin: bottom center;
+                box-sizing: border-box;
+                border: 2px solid #ccc;
+            }
+
+            .lid-open {
+                transform: translateX(-75%) translateY(-18.5px) rotateZ(-45deg);
+            }
+
+            .highlight-lid {
+                border: 3px solid red;
+            }
+
+            .highlight-body {
+                border: 3px solid red;
+            }
+
+            .highlight-lid-draggable {
+                border: 2px solid #fc634e;
+            }
+
+            .highlight-body-draggable {
+                border: 2px solid #fc634e;
+            }
+
+            .highlight-draggable {
+                border: 2px solid #e60000;
+            }
+
+            .fade-out {
+                animation: fadeOut 0.5s ease-in-out forwards;
+                pointer-events: none;
+            }
+
+            @keyframes fadeOut {
+                from {
+                    opacity: 1;
+                }
+
+                to {
+                    opacity: 0;
+                }
+            }
+
+            #trash-can-section {
+                display: flex;
+                position: relative;
+                justify-self: center;
+                justify-content: center;
+                align-items: center;
+                -noz-justify-content: center;
+                -moz-align-items: center;
+                margin-top: 135px;
+                background-color: #49baf2;
+                padding-inline: 50px;
+                padding-bottom: 50px;
+                border: 4px solid #ccc;
+                border-radius: 0.45cm;
+                outline: 2px dashed #fc634e;
+                outline-offset: 2px;
+                width: fit-content;
+            }
+
+            @keyframes jumpAndRattle {
+                0% {
+                    transform: translateY(0);
+                }
+
+                20% {
+                    transform: translateY(-20px);
+                }
+
+                40% {
+                    transform: translateY(0) rotate(5deg);
+                }
+
+                50% {
+                    transform: translateY(0) rotate(-5deg);
+                }
+
+                60% {
+                    transform: translateY(0) rotate(3deg);
+                }
+
+                70% {
+                    transform: translateY(0) rotate(-3deg);
+                }
+
+                80% {
+                    transform: translateY(0) rotate(2deg);
+                }
+
+                90% {
+                    transform: translateY(0) rotate(-2deg);
+                }
+
+                100% {
+                    transform: translateY(0) rotate(0);
+                }
+            }
+
+            .jumping {
+                animation: jumpAndRattle 1s ease-in-out;
+                pointer-events: none;
+            }
+
+            #create-draggable {
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                padding: 10px 20px;
+                background-color: #4CAF50;
+                color: white;
+                border: 6px solid #ccc;
+                border-radius: 5px;
+                border-end-start-radius: 10px;
+                border-start-end-radius: 10px;
+                cursor: pointer;
+                font-family: Verdana, sans-serif;
+                font-weight: bold;
+                z-index: 9999;
+                outline: 2px double #ccc;
+                outline-offset: 2px;
+                transition: all 0.15s ease-in-out;
+                user-select: none;
+            }
+
+            #create-draggable:hover {
+                background-color: #45a049;
+                transform: translateY(-2px);
+            }
+
+            #create-draggable:active {
+                transform: translateY(0);
+            }
+
+            .draggable {
+                position: absolute;
+                width: fit-content;
+                height: fit-content;
+                background-color: #ff5733;
+                border-radius: 0.45cm;
+                cursor: grab;
+                user-select: none;
+                padding: 8px 15px;
+                font-family: Arial, Verdana, Sans-Serif;
+                font-weight: normal;
+                z-index: 100;
+                touch-action: none;
+                will-change: transform, left, top;
+            }
+
+            .draggable:active {
+                transform: scale(1.1);
+                opacity: 0.8;
+                /* Make it slightly transparent */
+                z-index: 9999;
+                /* Ensure it stays above other elements */
+            }
+
+            .draggable:active {
+                mask-composite: draggable;
+                cursor: grabbing;
+            }
+
+            .draggable {
+                transition: none;
+                /* Disable transition when dragging */
+            }
+
+            .draggable.selected {
+                transition: left 0.1s ease-out, top 0.1s ease-out, transform 0.25s ease-in-out;
+            }
+
+            .draggable.golden {
+                background-color: #ffd700;
+                border: 2px solid #daa520;
+                box-shadow: 0 0 10px #ffd700;
+            }
+
+            .draggable.rainbow {
+                background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet);
+                color: white;
+                text-shadow: 1px 1px 2px;
+                box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            }
+
+            #stats {
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: rgba(255, 255, 255, 0.9);
+                padding: 15px 25px;
+                border-radius: 15px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+                font-family: Arial, sans-serif;
+                font-weight: bold;
+                user-select: none;
+                z-index: 9999;
+                border: 4px solid #ccc;
+                outline: 2px solid #fc634e;
+                outline-offset: 2px;
+                pointer-events: none;
+            }
+
+            #upgrade-panel h3 {
+                text-align: center;
+                color: #333;
+                margin-bottom: 20px;
+                font-family: Arial, sans-serif;
+                font-size: 24px;
+                text-transform: uppercase;
+                user-select: none;
+            }
+
+            .upgrade-tabs {
+                display: flex;
+                margin-bottom: 20px;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+
+            .upgrade-tab {
+                flex: 1;
+                padding: 10px;
+                text-align: center;
+                background-color: #ddd;
+                cursor: pointer;
+                border: none;
+                transition: all 0.3s;
+                font-family: Arial, sans-serif;
+                font-weight: bold;
+                user-select: none;
+            }
+
+            .upgrade-tab.active {
+                background-color: #4CAF50;
+                color: white;
+            }
+
+            .upgrade-panel-content {
+                position: absolute;
+                width: calc(100% - 40px);
+                /* Account for parent padding */
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            }
+
+            .upgrade-panel-content.active {
+                position: relative;
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .upgrade-tabs {
+                position: relative;
+                margin-bottom: 20px;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+
+            .upgrade-tab {
+                position: relative;
+                flex: 1;
+                padding: 10px;
+                text-align: center;
+                background-color: #f4d03f;
+                /* Yellow/gold base color */
+                cursor: pointer;
+                border: none;
+                transition: all 0.3s ease-in-out;
+                font-family: Arial, sans-serif;
+                font-weight: bold;
+                color: #333;
+                overflow: hidden;
+            }
+
+            .upgrade-tab:hover {
+                background-color: #f1c40f;
+                /* Slightly darker yellow on hover */
+            }
+
+            .upgrade-tab.active {
+                background-color: #e67e22;
+                /* Orange for active tab */
+                color: white;
+            }
+
+            .upgrade-tab::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 3px;
+                background-color: #d35400;
+                /* Darker orange for the underline */
+                transform: scaleX(0);
+                transition: transform 0.3s ease-in-out;
+            }
+
+            .upgrade-tab.active::after {
+                transform: scaleX(1);
+            }
+
+            .upgrade-button {
+                width: 100%;
+                padding: 15px;
+                margin: 10px 0;
+                background: linear-gradient(145deg, #f1c40f, #f39c12);
+                /* Gold gradient */
+                color: #333;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                user-select: none;
+                font-size: 14px;
+                font-weight: bold;
+                font-family: Arial, sans-serif;
+                transition: all 0.3s ease-in-out;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+                transform: translateY(0);
+            }
+
+            .upgrade-button:hover:not(:disabled) {
+                background: linear-gradient(145deg, #f39c12, #e67e22);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+
+            .upgrade-button:disabled {
+                background: linear-gradient(145deg, #95a5a6, #7f8c8d);
+                /* Gray gradient for locked */
+                cursor: not-allowed;
+                opacity: 0.9;
+                transform: none;
+                color: #ecf0f1;
+            }
+
+            .upgrade-button.maxed {
+                background: linear-gradient(145deg, #27ae60, #2ecc71);
+                /* Green gradient for maxed */
+                color: white;
+                cursor: default;
+            }
+
+            /* Lock icon for disabled buttons */
+            .upgrade-button:disabled::before {
+                content: '🔒';
+                position: relative;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 16px;
+            }
+
+            #upgrade-panel {
+                position: fixed;
+                right: 0;
+                top: 0;
+                width: 280px;
+                height: 100vh;
+                background: linear-gradient(to bottom, #fdfbf6, #fff7e6);
+                /* Soft yellow gradient background */
+                padding: 20px;
+                border-left: 2px solid #f39c12;
+                overflow-y: auto;
+                z-index: 9999;
+                box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+                transition: all 0.3s ease-in-out;
+            }
+
+            #upgrade-panel::-webkit-scrollbar {
+                width: 10px;
+                height: fit-content;
+            }
+
+            #upgrade-panel::-webkit-scrollbar-thumb {
+                cursor: pointer;
+                background: #f39c12;
+                border-radius: 4.5px;
+            }
+
+            #upgrade-panel::-webkit-scrollbar-thumb:hover {
+                background: #d68300;
+            }
+
+            #upgrade-panel.minimized {
+                transform: translateX(calc(100% - 20px));
+                overflow-y: hidden;
+            }
+
+            .minimize-button {
+                position: relative;
+                left: -30px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 30px;
+                height: 60px;
+                background: linear-gradient(145deg, #f1c40f, #f39c12);
+                border: 2px solid #e67e22;
+                border-right: 2px dashed #e67e22;
+                border-radius: 10px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+                transition: all 0.3s ease-in-out;
+                z-index: 9999;
+            }
+
+            .minimize-button:hover {
+                background: linear-gradient(145deg, #f39c12, #e67e22);
+                transform: translateY(-50%) scale(1.05);
+            }
+
+            .minimize-button .arrow {
+                width: 0;
+                height: 0;
+                border-top: 8px solid transparent;
+                border-bottom: 8px solid transparent;
+                border-right: 8px solid #fff;
+                transition: transform 0.3s ease-in-out;
+            }
+
+            /* Define keyframes for the forward 3D flip */
+            @keyframes flipYForward {
+                from {
+                    transform: rotateY(0deg);
+                }
+
+                to {
+                    transform: rotateY(180deg);
+                }
+            }
+
+            /* Define keyframes for the reverse 3D flip */
+            @keyframes flipYReverse {
+                from {
+                    transform: rotateY(180deg);
+                }
+
+                to {
+                    transform: rotateY(0deg);
+                }
+            }
+
+            #upgrade-panel.minimized .arrow {
+                animation: flipYForward 0.5s forwards;
+                /* Apply the forward flip animation */
+            }
+
+            #upgrade-panel.not-minimized .arrow {
+                animation: flipYReverse 0.5s forwards;
+                /* Apply the reverse flip animation */
+            }
+
+            .upgrade-panel-content {
+                position: absolute;
+                width: calc(100% - 40px);
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease-in-out;
+                background: rgba(255, 255, 255, 0.7);
+                border-radius: 8px;
+                padding: 10px;
+            }
+
+            .upgrade-panel-content.active {
+                position: relative;
+                opacity: 1;
+                visibility: visible;
+            }
+
+            /* Selection box styles */
+            #selection-box {
+                position: fixed;
+                border: 2px solid rgba(241, 196, 15, 0.8);
+                /* Yellow border matching your theme */
+                background-color: rgba(241, 196, 15, 0.1);
+                /* Transparent yellow fill */
+                border-radius: 10px;
+                display: none;
+                pointer-events: all;
+                z-index: 9999;
+            }
+
+            .value-indicator {
+                position: fixed;
+                background: rgba(0, 0, 0, 0.8);
+                color: #f1c40f;
+                padding: 5px 10px;
+                border: 2px solid whitesmoke;
+                border-radius: 25px;
+                font-weight: bold;
+                pointer-events: none;
+                text-shadow: none;
+                text-shadow: none;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                z-index: 9999;
+            }
+
+            .total-value {
+                color: #f1c40f;
+                font-weight: bold;
+                pointer-events: none;
+            }
+
+            /* Stack/Total indicator styles */
+            .stack-indicator {
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                background-color: #f1c40f;
+                /* Matches your yellow theme */
+                color: #333;
+                border: 2px solid whitesmoke;
+                border-radius: 25px;
+                width: 20px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                font-weight: bold;
+                pointer-events: none;
+                text-shadow: none;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                z-index: 100;
+            }
+
+            /* For when multiple items are stacked/selected */
+            .stack-indicator.multiple {
+                position: relative;
+                background-color: #e67e22;
+                /* Darker yellow/orange for emphasis */
+                color: white;
+            }
+
+            /* Progress bar for upgrades */
+            .progress-bar {
+                width: 100%;
+                height: 4px;
+                background-color: #ecf0f1;
+                border-radius: 2px;
+                margin-top: 5px;
+            }
+
+            .progress-bar-fill {
+                height: 100%;
+                background-color: #f1c40f;
+                border-radius: 2px;
+                transition: width 0.3s ease-in-out;
+            }
+
+            /* Media query for mobile devices */
+            @media (max-width: 768px) {
+                #upgrade-panel {
+                    width: 240px;
+                }
+
+                .minimize-button {
+                    perspective: 10px;
+                    display: flex;
+                }
+            }
+        </style>
+    </head>
+
+<body>
+    <div id="stats">
+        Disposed Trash: <span id="disposed-count">0</span><br>
+        Capacity: <span id="capacity">10</span><br>
+        Base Value: <span id="base-value">5</span>
+    </div>
+
+    <div id="upgrade-panel">
+        <div class="minimize-button">
+            <div class="arrow"></div>
+        </div>
+        <h3>Upgrades</h3>
+        <div id="upgrade-buttons"></div>
+    </div>
+    <section id="trash-can-section">
+        <div class="trash-can">
+            <div class="trash-lid"></div>
+            <div class="trash-body"></div>
+        </div>
+        <button id="create-draggable">Create New Item</button>
+    </section>
+
+    <script>
+        // Initialize with current date/time and user info
+        // Game state initialization
+        let gameState = {
+            disposedTrash: 0,
+            capacity: 10,
+            workspaceUpgrades: Array(40).fill(0),
+            trashUpgrades: Array(40).fill(0),
+            baseTrashValue: 5,
+            currentLevel: 0,
+            trashPositions: [],
+            isTrashCanAnimating: false,
+            lastSaved: CURRENT_TIMESTAMP,
+            user: CURRENT_USER,
+            upgradePanelMinimized: false
+        };
+
+        // Track active upgrade tab
+        let activeUpgradeTab = 'workspace';
+
+        // Constants
+        const SAVE_INTERVAL = 15000; // 30 seconds
+        const messages = [
+            "Plastic",
+            "Plastic Bag",
+            "Recycle Me!",
+            "Garbage",
+            "Cardboard",
+            "SUS!",
+            "Touch Me!",
+            "Trash It!"
+        ];
+
+        // DOM Elements
+        const trashCan = document.querySelector('.trash-can');
+        const trashLid = document.querySelector('.trash-lid');
+        const trashBody = document.querySelector('.trash-body');
+        let draggedElement = null;
+        let selectedItems = new Set();
+
+        function loadGameState() {
+            const savedState = localStorage.getItem('trashGameState');
+            if (savedState) {
+                const parsed = JSON.parse(savedState);
+                if (parsed.user === CURRENT_USER) {
+                    gameState = { ...gameState, ...parsed };
+                    gameState.lastSaved = CURRENT_TIMESTAMP;
+
+                    // Apply minimized state if it was saved
+                    if (gameState.upgradePanelMinimized) {
+                        document.getElementById('upgrade-panel').classList.add('minimized');
+                    }
+                }
+                updateUI();
+            }
+        }
+
+        function saveGameState() {
+            gameState.lastSaved = CURRENT_TIMESTAMP;
+            localStorage.setItem('trashGameState', JSON.stringify(gameState));
+        }
+
+        function updateUI() {
+            document.getElementById('disposed-count').textContent = gameState.disposedTrash.toLocaleString();
+            document.getElementById('capacity').textContent = gameState.capacity;
+            document.getElementById('base-value').textContent = gameState.baseTrashValue;
+            createUpgradePanel();
+        }
+
+        function createUpgradePanel() {
+            const panel = document.getElementById('upgrade-panel');
+            const container = document.getElementById('upgrade-buttons');
+
+            // Add event listener to existing minimize button
+            const minimizeButton = panel.querySelector('.minimize-button');
+            if (minimizeButton) {
+                minimizeButton.addEventListener('click', toggleUpgradePanel);
+            }
+
+            container.innerHTML = `
+        <div class="upgrade-tabs">
+            <button class="upgrade-tab ${activeUpgradeTab === 'workspace' ? 'active' : ''}" data-tab="workspace">Workspace Upgrades</button>
+            <button class="upgrade-tab ${activeUpgradeTab === 'trash' ? 'active' : ''}" data-tab="trash">Trash Upgrades</button>
+        </div>
+        <div id="workspace-upgrades" class="upgrade-panel-content ${activeUpgradeTab === 'workspace' ? 'active' : ''}"></div>
+        <div id="trash-upgrades" class="upgrade-panel-content ${activeUpgradeTab === 'trash' ? 'active' : ''}"></div>
+    `;
+
+            const tabs = container.querySelectorAll('.upgrade-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.dataset.tab;
+                    if (activeUpgradeTab === targetTab) return;
+
+                    activeUpgradeTab = targetTab;
+
+                    // Update tab styles
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    // Smooth transition for content
+                    const contents = container.querySelectorAll('.upgrade-panel-content');
+                    contents.forEach(content => {
+                        if (content.id === `${targetTab}-upgrades`) {
+                            content.style.transform = 'translateY(10px)';
+                            content.classList.add('active');
+                            requestAnimationFrame(() => {
+                                content.style.transform = 'translateY(0)';
+                            });
+                        } else {
+                            content.classList.remove('active');
+                        }
+                    });
+                });
+            });
+
+            updateWorkspaceUpgrades();
+            updateTrashUpgrades();
+
+            // Restore minimized state if it was minimized
+            if (gameState.upgradePanelMinimized) {
+                panel.classList.add('minimized');
+                const arrow = panel.querySelector('.arrow');
+                if (arrow) {
+                    arrow.style.transform = 'rotate(180deg)';
+                }
+            }
+        }
+
+        // Minimize button toggle function
+        function toggleUpgradePanel() {
+            const panel = document.getElementById('upgrade-panel');
+            const arrow = panel.querySelector('.arrow');
+
+            gameState.upgradePanelMinimized = !gameState.upgradePanelMinimized;
+
+            if (gameState.upgradePanelMinimized) {
+                panel.classList.add('minimized');
+                panel.classList.remove('not-minimized'); // Ensure the reverse flip is removed
+                setTimeout(() => {
+                    if (arrow) {
+                        arrow.style.animation = 'flipYForward 0.5s forwards';
+                    }
+                }, 150);
+            } else {
+                panel.classList.remove('minimized');
+                panel.classList.add('not-minimized');
+                setTimeout(() => {
+                    if (arrow) {
+                        arrow.style.animation = 'flipYReverse 0.5s forwards';
+                    }
+                }, 150);
+            }
+
+            saveGameState();
+        }
+
+        function updateWorkspaceUpgrades() {
+            const container = document.getElementById('workspace-upgrades');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 40; i++) {
+                const button = document.createElement('button');
+                button.className = 'upgrade-button';
+
+                const baseCost = Math.floor(Math.pow(1.5, i) * 100);
+                const capacityGain = Math.floor(5 + (i * 2));
+
+                button.innerHTML = `Level ${i + 1}<br>
+            Cost: ${baseCost.toLocaleString()} trash<br>
+            +${capacityGain} capacity<br>
+            Progress: ${gameState.workspaceUpgrades[i]}/25`;
+
+                const isMaxed = gameState.workspaceUpgrades[i] >= 25;
+                const previousNotMaxed = i > 0 && gameState.workspaceUpgrades[i - 1] < 25;
+                const cantAfford = gameState.disposedTrash < baseCost;
+
+                button.disabled = isMaxed || previousNotMaxed || cantAfford;
+
+                if (isMaxed) {
+                    button.classList.add('maxed');
+                    button.innerHTML = `Level ${i + 1}<br>MAXED OUT!<br>+${capacityGain} capacity`;
+                }
+
+                button.onclick = () => purchaseWorkspaceUpgrade(i, baseCost, capacityGain);
+                container.appendChild(button);
+            }
+        }
+
+        function updateTrashUpgrades() {
+            const container = document.getElementById('trash-upgrades');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 40; i++) {
+                const button = document.createElement('button');
+                button.className = 'upgrade-button';
+
+                const baseCost = Math.floor(Math.pow(1.6, i) * 150);
+                const valueIncrease = Math.floor(3 + (i * 1.5));
+
+                button.innerHTML = `Level ${i + 1}<br>
+            Cost: ${baseCost.toLocaleString()} trash<br>
+            +${valueIncrease} base value<br>
+            Progress: ${gameState.trashUpgrades[i]}/25`;
+
+                const isMaxed = gameState.trashUpgrades[i] >= 25;
+                const previousNotMaxed = i > 0 && gameState.trashUpgrades[i - 1] < 25;
+                const cantAfford = gameState.disposedTrash < baseCost;
+
+                button.disabled = isMaxed || previousNotMaxed || cantAfford;
+
+                if (isMaxed) {
+                    button.classList.add('maxed');
+                    button.innerHTML = `Level ${i + 1}<br>MAXED OUT!<br>+${valueIncrease} base value`;
+                }
+
+                button.onclick = () => purchaseTrashUpgrade(i, baseCost, valueIncrease);
+                container.appendChild(button);
+            }
+        }
+
+        function purchaseWorkspaceUpgrade(level, cost, capacityGain) {
+            if (gameState.disposedTrash >= cost &&
+                gameState.workspaceUpgrades[level] < 25 &&
+                (level === 0 || gameState.workspaceUpgrades[level - 1] >= 25)) {
+
+                gameState.disposedTrash -= cost;
+                gameState.workspaceUpgrades[level]++;
+                gameState.capacity += capacityGain;
+                saveGameState();
+                updateUI();
+
+                // Preserve active tab
+                const tabElement = document.querySelector(`.upgrade-tab[data-tab="${activeUpgradeTab}"]`);
+                if (tabElement) {
+                    tabElement.click();
+                }
+            }
+        }
+
+        function purchaseTrashUpgrade(level, cost, valueIncrease) {
+            if (gameState.disposedTrash >= cost &&
+                gameState.trashUpgrades[level] < 25 &&
+                (level === 0 || gameState.trashUpgrades[level - 1] >= 25)) {
+
+                gameState.disposedTrash -= cost;
+                gameState.trashUpgrades[level]++;
+                gameState.baseTrashValue += valueIncrease;
+                saveGameState();
+                updateUI();
+
+                // Preserve active tab
+                const tabElement = document.querySelector(`.upgrade-tab[data-tab="${activeUpgradeTab}"]`);
+                if (tabElement) {
+                    tabElement.click();
+                }
+            }
+        }
+
+        function createDraggable() {
+            const currentTrashCount = document.querySelectorAll('.draggable').length;
+            if (currentTrashCount >= gameState.capacity) {
+                alert(`Maximum capacity reached ${currentTrashCount}! Upgrade to create more trash.`);
+                return;
+            }
+
+            const draggable = document.createElement('div');
+            draggable.className = 'draggable';
+
+            const random = Math.random();
+            let trashType = 'regular';
+            let trashValue = gameState.baseTrashValue + Math.floor(Math.random() * 6);
+
+            if (random <= 0.025) {
+                trashType = 'rainbow';
+                draggable.classList.add('rainbow');
+                trashValue = gameState.baseTrashValue * (Math.floor(Math.random() * 401) + 200);
+            } else if (random <= 0.225) {
+                trashType = 'golden';
+                draggable.classList.add('golden');
+                trashValue = gameState.baseTrashValue * (Math.floor(Math.random() * 41) + 20);
+            }
+
+            draggable.dataset.value = trashValue;
+            draggable.dataset.type = trashType;
+
+            const x = Math.random() * (window.innerWidth - 350);
+            const y = Math.random() * (window.innerHeight - 100);
+
+            draggable.style.left = `${x}px`;
+            draggable.style.top = `${y}px`;
+            draggable.innerText = messages[Math.floor(Math.random() * messages.length)];
+
+            draggable.addEventListener('mousedown', startDragging);
+            draggable.addEventListener('touchstart', startDragging, { passive: false }); // Add this line
+            document.body.appendChild(draggable);
+
+            gameState.trashPositions.push({
+                x, y, type: trashType,
+                value: trashValue,
+                message: draggable.innerText
+            });
+            saveGameState();
+        }
+
+        function updateTrashPosition(element) {
+            const index = gameState.trashPositions.findIndex(pos =>
+                pos.message === element.innerText &&
+                pos.type === element.dataset.type &&
+                parseInt(pos.value) === parseInt(element.dataset.value)
+            );
+
+            if (index !== -1) {
+                gameState.trashPositions[index].x = parseInt(element.style.left);
+                gameState.trashPositions[index].y = parseInt(element.style.top);
+            }
+        }
+
+        // startDragging function's onMouseUp: & other stuff
+        function startDragging(e) {
+            if (e.target.classList.contains('fade-out')) return;
+
+            // Prevent default behavior and scrolling
+            e.preventDefault();
+
+            draggedElement = e.target;
+            const rect = draggedElement.getBoundingClientRect();
+
+            // Handle both mouse and touch events
+            const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+            const offsetX = clientX - rect.left;
+            const offsetY = clientY - rect.top;
+
+            if (!draggedElement.classList.contains('selected')) {
+                if (!e.shiftKey && !e.touches) { // Only clear selection if not touch and no shift key
+                    selectedItems.clear();
+                    document.querySelectorAll('.draggable.selected').forEach(item =>
+                        item.classList.remove('selected'));
+                }
+                draggedElement.classList.add('selected');
+                selectedItems.add(draggedElement);
+            }
+
+            function onMove(e) {
+                if (!draggedElement || gameState.isTrashCanAnimating) return;
+
+                e.preventDefault();
+
+                // Handle both mouse and touch events
+                const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+                const x = clientX - offsetX;
+                const y = clientY - offsetY;
+
+                const selectedCount = selectedItems.size;
+
+                // Reset any existing stack indicators
+                document.querySelectorAll('.stack-indicator').forEach(el => el.remove());
+
+                if (selectedCount > 1) {
+                    let index = 0;
+                    const offset = 3;
+                    const maxVisible = Math.min(5, selectedCount);
+
+                    selectedItems.forEach(item => {
+                        if (index < maxVisible) {
+                            item.style.left = (x + (index * offset)) + 'px';
+                            item.style.top = (y + (index * offset)) + 'px';
+                            item.style.zIndex = 100 + index;
+                            item.classList.add('stacked');
+                            item.style.display = '';
+                            updateTrashPosition(item);
+                        } else {
+                            item.style.display = 'none';
+                        }
+                        index++;
+                    });
+
+                    if (selectedCount > 5) {
+                        const indicator = document.createElement('div');
+                        indicator.className = 'stack-indicator';
+                        indicator.textContent = `+${selectedCount - 5}`;
+                        draggedElement.appendChild(indicator);
+                    }
+                } else {
+                    draggedElement.style.left = x + 'px';
+                    draggedElement.style.top = y + 'px';
+                    updateTrashPosition(draggedElement);
+                }
+
+                const trashRect = trashCan.getBoundingClientRect();
+                const isOverTrash = clientX >= trashRect.left &&
+                    clientX <= trashRect.right &&
+                    clientY >= trashRect.top &&
+                    clientY <= trashRect.bottom;
+
+                // Animate trash can when item is over it
+                if (isOverTrash && !trashCan.classList.contains('jumping')) {
+                    trashLid.classList.add('lid-open');
+                    trashCan.classList.add('jumping');
+                    setTimeout(() => {
+                        if (!isOverTrash) {
+                            trashCan.classList.remove('jumping');
+                            trashLid.classList.remove('lid-open');
+                        }
+                    }, 1000);
+                }
+
+                updateTrashCanHighlight(isOverTrash);
+                updateStackIndicator();
+            }
+
+            function onEnd(e) {
+                if (!draggedElement) return;
+
+                const clientX = e.type.includes('mouse') ? e.clientX :
+                    (e.changedTouches ? e.changedTouches[0].clientX : e.touches[0].clientX);
+                const clientY = e.type.includes('mouse') ? e.clientY :
+                    (e.changedTouches ? e.changedTouches[0].clientY : e.touches[0].clientY);
+
+                const trashRect = trashCan.getBoundingClientRect();
+                const isOverTrash = clientX >= trashRect.left &&
+                    clientX <= trashRect.right &&
+                    clientY >= trashRect.top &&
+                    clientY <= trashRect.bottom;
+
+                if (isOverTrash) {
+                    deleteSelectedItems();
+                } else {
+                    selectedItems.forEach(item => {
+                        updateTrashPosition(item);
+                    });
+                    resetDraggedItems();
+                }
+
+                // Clean up event listeners
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onEnd);
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('touchend', onEnd);
+                document.removeEventListener('touchcancel', onEnd);
+
+                // Reset dragging state
+                draggedElement = null;
+
+                // Update UI state
+                updateTrashCanHighlight(false);
+                trashLid.classList.remove('lid-open');
+
+                // Save the game state
+                saveGameState();
+            }
+
+            // Add both mouse and touch event listeners
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onEnd);
+            document.addEventListener('touchcancel', onEnd);
+
+            // Add visual feedback
+            trashBody.classList.add('highlight-body-draggable');
+            trashLid.classList.add('highlight-lid-draggable');
+            updateStackIndicator();
+
+            // Add the active dragging class
+            draggedElement.classList.add('dragging');
+        }
+
+        // Trigger animation on load
+        function initializeTrashCanAnimation() {
+            trashCan.classList.add('jumping');
+            trashLid.classList.add('lid-open');
+
+            setTimeout(() => {
+                trashCan.classList.remove('jumping');
+                trashLid.classList.remove('lid-open');
+            }, 1000); // Match the animation duration
+        }
+
+        function deleteSelectedItems() {
+            if (selectedItems.size === 0) return;
+
+            gameState.isTrashCanAnimating = true;
+            trashCan.classList.add('jumping');
+            trashLid.classList.add('lid-open');
+
+            let totalValue = 0;
+            selectedItems.forEach(item => {
+                const value = parseInt(item.dataset.value) || 0;
+                totalValue += value;
+
+                const index = gameState.trashPositions.findIndex(pos =>
+                    pos.message === item.innerText);
+                if (index !== -1) {
+                    gameState.trashPositions.splice(index, 1);
+                }
+
+                item.classList.add('fade-out');
+                setTimeout(() => {
+                    if (item && item.parentNode) {
+                        item.remove();
+                    }
+                }, 500);
+            });
+
+            gameState.disposedTrash += totalValue;
+            selectedItems.clear();
+            saveGameState();
+            updateUI();
+
+            setTimeout(() => {
+                trashLid.classList.remove('lid-open');
+                trashCan.classList.remove('jumping');
+                gameState.isTrashCanAnimating = false;
+            }, 1000);
+        }
+
+        function resetDraggedItems() {
+            selectedItems.forEach(item => {
+                item.classList.remove('stacked');
+                item.style.zIndex = '100';
+                item.style.display = '';
+            });
+        }
+
+        function updateTrashCanHighlight(isOverTrash) {
+            trashLid.classList.toggle('highlight-lid', isOverTrash);
+            trashBody.classList.toggle('highlight-body', isOverTrash);
+            trashLid.classList.toggle('highlight-lid-draggable', !isOverTrash);
+            trashBody.classList.toggle('highlight-body-draggable', !isOverTrash);
+
+            if (draggedElement) {
+                draggedElement.classList.toggle('highlight-draggable', isOverTrash);
+            }
+        }
+
+        // Run this function on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeTrashCanAnimation();
+        });
+
+        function updateStackIndicator() {
+            document.querySelectorAll('.stack-indicator').forEach(el => el.remove());
+
+            if (selectedItems.size > 0) {
+                const totalValue = Array.from(selectedItems).reduce((sum, item) =>
+                    sum + (parseInt(item.dataset.value) || 0), 0);
+
+                const indicator = document.createElement('div');
+                indicator.className = 'stack-indicator';
+                indicator.textContent = `${selectedItems.size}`;
+                indicator.title = `Total Value: ${totalValue.toLocaleString()}`;
+
+                Array.from(selectedItems)[0].appendChild(indicator);
+
+                if (selectedItems.size > 1) {
+                    const valueIndicator = document.createElement('div');
+                    valueIndicator.className = 'stack-indicator value-indicator';
+                    valueIndicator.textContent = `$${totalValue.toLocaleString()}`;
+                    valueIndicator.style.width = 'fit-content';
+                    valueIndicator.style.left = '-8px';
+                    valueIndicator.style.top = '15px';
+                    Array.from(selectedItems)[0].appendChild(valueIndicator);
+                }
+            }
+        }
+
+        function initializeSelectionBox() {
+            let startX, startY;
+            let selectionBox = null;
+
+            document.addEventListener('mousedown', function (e) {
+                if (e.target !== document.body && e.target !== document.documentElement) {
+                    return;
+                }
+
+                startX = e.pageX;
+                startY = e.pageY;
+
+                selectionBox = document.createElement('div');
+                selectionBox.id = 'selection-box';
+                document.body.appendChild(selectionBox);
+
+                if (!e.shiftKey) {
+                    selectedItems.clear();
+                    document.querySelectorAll('.draggable.selected').forEach(item =>
+                        item.classList.remove('selected'));
+                }
+
+                function onMouseMove(e) {
+                    if (!selectionBox) return;
+
+                    const currentX = e.pageX;
+                    const currentY = e.pageY;
+
+                    const width = Math.abs(currentX - startX);
+                    const height = Math.abs(currentY - startY);
+                    const left = Math.min(startX, currentX);
+                    const top = Math.min(startY, currentY);
+
+                    selectionBox.style.display = 'block';
+                    selectionBox.style.left = `${left}px`;
+                    selectionBox.style.top = `${top}px`;
+                    selectionBox.style.width = `${width}px`;
+                    selectionBox.style.height = `${height}px`;
+
+                    const selectionRect = selectionBox.getBoundingClientRect();
+                    document.querySelectorAll('.draggable').forEach(draggable => {
+                        if (draggable.classList.contains('fade-out')) return;
+
+                        const draggableRect = draggable.getBoundingClientRect();
+                        if (intersects(selectionRect, draggableRect)) {
+                            draggable.classList.add('selected');
+                            selectedItems.add(draggable);
+                        } else if (!e.shiftKey) {
+                            draggable.classList.remove('selected');
+                            selectedItems.delete(draggable);
+                        }
+                    });
+
+                    updateStackIndicator();
+                }
+
+                function onMouseUp() {
+                    if (selectionBox && selectionBox.parentNode) {
+                        selectionBox.parentNode.removeChild(selectionBox);
+                    }
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        }
+
+        function intersects(rect1, rect2) {
+            return !(rect2.left > rect1.right ||
+                rect2.right < rect1.left ||
+                rect2.top > rect1.bottom ||
+                rect2.bottom < rect1.top);
+        }
+
+        function restoreTrashPositions() {
+            gameState.trashPositions.forEach(pos => {
+                const draggable = document.createElement('div');
+                draggable.className = 'draggable';
+                if (pos.type === 'rainbow') draggable.classList.add('rainbow');
+                if (pos.type === 'golden') draggable.classList.add('golden');
+
+                draggable.dataset.value = pos.value;
+                draggable.dataset.type = pos.type;
+                draggable.style.left = `${pos.x}px`;
+                draggable.style.top = `${pos.y}px`;
+                draggable.innerText = pos.message;
+
+                draggable.addEventListener('mousedown', startDragging);
+                document.body.appendChild(draggable);
+            });
+        }
+
+        // Initialize everything
+        function init() {
+            loadGameState();
+            initializeSelectionBox();
+            document.getElementById('create-draggable').addEventListener('click', createDraggable);
+
+            // Initialize upgrade panel minimize button
+            createUpgradePanel();
+
+            if (gameState.trashPositions.length === 0) {
+                createDraggable();
+            } else {
+                restoreTrashPositions();
+            }
+
+            setInterval(saveGameState, SAVE_INTERVAL);
+        }
+
+        // Start the game
+        init();
+    </script>
+</body>
+
+</html>
