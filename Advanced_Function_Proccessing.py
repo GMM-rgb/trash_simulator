@@ -4,8 +4,6 @@ __path__: index.html
 
 printf("Starting Function Proccess")
 
-function; handleHTMLFunction()
-
-
+function; handleHTMLFunction(index.html)
 
 
